@@ -185,7 +185,7 @@ with st.sidebar:
 # --- พื้นที่หลัก (Main Content) ---
 # หัวข้อหลักแบบ Gradient Text
 st.markdown('<div class="gradient-text">Apolosense </div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-text">ผู้ช่วย AI สำหรับวิเคราะห์ความจริงใจในข้อความภาษาไทย 🇹🇭</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-text">ผู้ช่วย AI สำหรับวิเคราะห์ความจริงใจของคำขอโทษในข้อความภาษาไทย 🇹🇭</div>', unsafe_allow_html=True)
 
 # --------------------------------------
 # ลดขนาดกล่องรับข้อมูล (ปรับ height เหลือ 80)
