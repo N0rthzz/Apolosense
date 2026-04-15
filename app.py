@@ -172,7 +172,7 @@ with main_col2:
                 st.write("**📊 สรุปข้อมูลที่พบ**")
                 m_c1, m_c2 = st.columns(2)
                 m_c1.metric("คำขอโทษ", f"{int(extra[0][3])}")
-                m_c1.metric("การรับผิดชอบ", f"{int(extra[0][4])}")
+                m_c1.metric("คำรับผิดชอบ", f"{int(extra[0][4])}")
                 m_c2.metric("คำกั๊ก/เลี่ยง", f"{int(extra[0][5])}")
                 m_c2.metric("คะแนนอารมณ์", f"{int(extra[0][0])}")
 
