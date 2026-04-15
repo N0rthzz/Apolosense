@@ -6,7 +6,7 @@ from pythainlp.tokenize import word_tokenize
 # 1. ตั้งค่าหน้าเว็บ (Must be the very first st command)
 # ==========================================
 st.set_page_config(
-    page_title="Apolosense | ✨ Sincerity Analyzer",
+    page_title="Apolosense AI | ✨ Sincerity Analyzer",
     page_icon="🤖",
     layout="centered",
     initial_sidebar_state="expanded"
