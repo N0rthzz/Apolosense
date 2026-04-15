@@ -19,18 +19,14 @@ st.set_page_config(
 # ==========================================
 st.markdown("""
 <style>
-    /* นำ Font Google มาใช้ */
     @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap');
     
     html, body, [class*="css"]  {
         font-family: 'Kanit', sans-serif;
     }
-
     .main {
         background-color: #f8f9fa;
     }
-
-    /* ตกแต่ง Card ผลลัพธ์ */
     .result-card {
         padding: 2rem;
         border-radius: 20px;
@@ -39,19 +35,16 @@ st.markdown("""
         transition: transform 0.3s ease;
         border: 1px solid rgba(0,0,0,0.05);
     }
-    
     .sincere-card {
         background: linear-gradient(135deg, #00b09b, #96c93d);
         color: white;
         box-shadow: 0 10px 20px rgba(0,176,155,0.2);
     }
-
     .insincere-card {
         background: linear-gradient(135deg, #ff416c, #ff4b2b);
         color: white;
         box-shadow: 0 10px 20px rgba(255,75,43,0.2);
     }
-
     .metric-box {
         background: white;
         padding: 15px;
@@ -63,7 +56,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 3. NLP FUNCTIONS (Logic เดิมของคุณ)
+# 3. NLP FUNCTIONS
 # ==========================================
 def tokenize(text):
     return word_tokenize(text, engine="newmm")
@@ -96,110 +89,106 @@ def extra_features(texts):
     return np.array(features)
 
 # ==========================================
-# 4. LOAD MODEL
+# 4. LOAD MODEL (ย้ายมาไว้ข้างบนเพื่อให้เรียกใช้ได้ทั่วถึง)
 # ==========================================
 @st.cache_resource(show_spinner=False)
 def load_models():
-    # หมายเหตุ: ตรวจสอบชื่อไฟล์ให้ตรงกับที่คุณมี
-    model = joblib.load("apolosense_model.pkl")
-    vectorizer = joblib.load("vectorizer.pkl")
-    return model, vectorizer
+    try:
+        model = joblib.load("apolosense_model.pkl")
+        vectorizer = joblib.load("vectorizer.pkl")
+        return model, vectorizer
+    except Exception as e:
+        st.error(f"ไม่สามารถโหลดไฟล์โมเดลได้: {e}")
+        return None, None
+
+# โหลดเตรียมไว้ก่อนเลย
+model, vectorizer = load_models()
 
 # ==========================================
-# 5. MAIN UI - ส่วนหัวหน้าเว็บ
+# 5. MAIN UI
 # ==========================================
 st.image("https://cdn-icons-png.flaticon.com/512/4712/4712109.png", width=80)
 st.title("Apolosense")
 st.markdown("##### ระบบวิเคราะห์ระดับความจริงใจในคำขอโทษด้วย Machine Learning")
-st.info("💡 **Tips:** คำขอโทษที่จริงใจมักประกอบด้วยการยอมรับผิดและการเสนอทางแก้ไข (Accountability)")
+st.info("💡 **Tips:** คำขอโทษที่จริงใจมักประกอบด้วยการยอมรับผิดและการเสนอทางแก้ไข")
 
-# ส่วนรับ Input
-with st.container():
-    user_input = st.text_area(
-        "ระบุข้อความที่ต้องการวิเคราะห์:",
-        height=150,
-        placeholder="ตัวอย่าง: ผมขอโทษจริงๆ ครับที่ทำของพัง ผมจะรีบดำเนินการซ่อมแซมให้ทันที...",
-        help="พิมพ์หรือวางข้อความคำขอโทษภาษาไทยที่นี่"
-    )
-    
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        analyze_button = st.button("🔍 เริ่มการวิเคราะห์", use_container_width=True, type="primary")
+user_input = st.text_area(
+    "ระบุข้อความที่ต้องการวิเคราะห์:",
+    height=150,
+    placeholder="พิมพ์คำขอโทษที่นี่...",
+    help="ระบบจะวิเคราะห์จากโครงสร้างประโยคและคำสำคัญ"
+)
+
+col1, col2, col3 = st.columns([1, 2, 1])
+with col2:
+    analyze_button = st.button("🚀 เริ่มการวิเคราะห์", use_container_width=True, type="primary")
 
 # ==========================================
 # 6. PREDICTION & DISPLAY
 # ==========================================
 if analyze_button:
     if not user_input.strip():
-        st.error("กรุณาป้อนข้อความก่อนกดวิเคราะห์")
+        st.warning("⚠️ กรุณาป้อนข้อความก่อน")
+    elif model is None or vectorizer is None:
+        st.error("❌ ไม่พบโมเดลในระบบ กรุณาตรวจสอบไฟล์ .pkl")
     else:
-        with st.spinner("🧠 AI กำลังประมวลผลโครงสร้างภาษา..."):
+        with st.spinner("🧠 AI กำลังวิเคราะห์..."):
             try:
-                # การเตรียมข้อมูล
+                # --- ส่วนสำคัญ: ดึงคุณลักษณะ (Features) ---
                 tokens = tokenize(user_input)
                 processed_text = " ".join(tokens)
+                
+                # ใช้ vectorizer ที่โหลดมาจากด้านบน
                 text_vector = vectorizer.transform([processed_text])
                 extra = extra_features([user_input])
+                
+                # รวม Features (TF-IDF + Extra Features)
                 final_feature = hstack([text_vector, extra])
 
-                # การพยากรณ์
-                model, vectorizer = load_models()
+                # ทำนายผล
                 prediction_val = model.predict(final_feature)[0]
                 
-                # แสดงผลลัพธ์แบบสวยงาม
+                # --- การแสดงผล ---
                 st.divider()
-                
                 if prediction_val == 1:
-                    st.markdown(f"""
+                    st.markdown("""
                     <div class="result-card sincere-card">
                         <h1 style="font-size: 4rem;">😊</h1>
-                        <h2>ผลการวิเคราะห์: มีความจริงใจสูง</h2>
-                        <p>ข้อความนี้มีการแสดงความรับผิดชอบหรือความรู้สึกผิดอย่างชัดเจน</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                        <h2>ผลการวิเคราะห์: มีความจริงใจ</h2>
+                        <p>ข้อความแสดงถึงความรับผิดชอบและเจตนาที่ดี</p>
+                    </div>""", unsafe_allow_html=True)
                     st.balloons()
                 else:
-                    st.markdown(f"""
+                    st.markdown("""
                     <div class="result-card insincere-card">
-                        <h1 style="font-size: 4rem;">🙄</h1>
+                        <h1 style="font-size: 4rem;">😒</h1>
                         <h2>ผลการวิเคราะห์: ฟังดูไม่จริงใจ</h2>
-                        <p>ข้อความอาจมีการใช้คำเลี่ยงบาลี (Hedging) หรือขาดการแสดงความรับผิดชอบที่เพียงพอ</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                        <p>ข้อความอาจขาดการแสดงความรับผิดชอบที่ชัดเจน</p>
+                    </div>""", unsafe_allow_html=True)
 
-                # ส่วนสถิติ (Metrics)
+                # แสดง Metrics
                 st.markdown("### 📊 รายละเอียดตัวบ่งชี้")
                 m_col1, m_col2, m_col3 = st.columns(3)
-                
                 with m_col1:
                     st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-                    st.metric("คำขอโทษที่พบ", f"{int(extra[0][3])} คำ")
+                    st.metric("คำขอโทษ", f"{int(extra[0][3])} คำ")
                     st.markdown('</div>', unsafe_allow_html=True)
                 with m_col2:
                     st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-                    st.metric("การแสดงความรับผิดชอบ", f"{int(extra[0][4])} จุด")
+                    st.metric("ความรับผิดชอบ", f"{int(extra[0][4])} จุด")
                     st.markdown('</div>', unsafe_allow_html=True)
                 with m_col3:
                     st.markdown('<div class="metric-box">', unsafe_allow_html=True)
-                    st.metric("คำกั๊ก/เลี่ยง", f"{int(extra[0][5])} คำ")
+                    st.metric("คำเลี่ยงบาลี", f"{int(extra[0][5])} คำ")
                     st.markdown('</div>', unsafe_allow_html=True)
 
-                # Expansion สำหรับ Advanced Data
-                with st.expander("🛠 ข้อมูลทางเทคนิคสำหรับนักวิเคราะห์"):
-                    c1, c2 = st.columns(2)
-                    with c1:
-                        st.write("**การตัดคำ (Tokenization):**")
-                        st.caption(" / ".join(tokens))
-                    with c2:
-                        feat_df = pd.DataFrame({
-                            'Feature': ['Sentiment', 'Length', 'Tokens', 'Apology', 'Responsible', 'Hedge'],
-                            'Value': extra[0]
-                        })
-                        st.dataframe(feat_df, use_container_width=True)
+                with st.expander("🔍 ดูข้อมูลทางเทคนิค"):
+                    st.write("**Tokens:**", tokens)
+                    st.write("**Feature shape:**", final_feature.shape)
 
             except Exception as e:
-                st.error(f"❌ ระบบขัดข้อง: {e}")
+                st.error(f"❌ เกิดข้อผิดพลาดระหว่างวิเคราะห์: {e}")
 
 # Footer
 st.markdown("---")
-st.markdown("<center style='color: gray;'>Apolosense Project © 2026 | Powered by PyThaiNLP & Scikit-learn</center>", unsafe_allow_html=True)
+st.markdown("<center style='color: gray;'>Apolosense Project © 2026 | Powered by PyThaiNLP</center>", unsafe_allow_html=True)
