@@ -163,7 +163,7 @@ with main_col2:
                         <span style="font-size: 30px;">😒</span>
                         <div>
                             <b style="font-size: 18px;">ผลลัพธ์: ฟังดูไม่จริงใจ</b><br>
-                            <small>มีการใช้คำเลี่ยงบาลีหรือขาดน้ำหนักของการกระทำ</small>
+                            <small>มีการใช้คำเลี่ยงหรือขาดน้ำหนักของการกระทำ</small>
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
